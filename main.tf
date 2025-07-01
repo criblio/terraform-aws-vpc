@@ -1006,7 +1006,7 @@ locals {
 }
 
 resource "aws_route_table" "to_firewall" {
-  count = local.create_firewall_subnets ? local.num_firewall_route_tables : 0
+  count = var.network_firewall_enable_subnet_routing ? local.num_firewall_route_tables : 0
 
   vpc_id = local.vpc_id
 
@@ -1023,7 +1023,7 @@ resource "aws_route_table" "to_firewall" {
 }
 
 resource "aws_route_table_association" "to_firewall" {
-  count = local.create_firewall_subnets ? local.len_firewall_subnets : 0
+  count = var.network_firewall_enable_subnet_routing ? local.len_firewall_subnets : 0
 
   //Firewall subnets explicity need to be associated with the *public* route tables to allow egress to the internet.
   subnet_id      = element(local.subnets_for_to_firewall_route_tables[*].id, count.index)
@@ -1031,7 +1031,7 @@ resource "aws_route_table_association" "to_firewall" {
 }
 
 resource "aws_route" "to_firewall" {
-  count = local.create_firewall_subnets ? local.len_firewall_subnets : 0
+  count = var.network_firewall_enable_subnet_routing ? local.len_firewall_subnets : 0
 
   route_table_id         = element(aws_route_table.to_firewall[*].id, var.create_multiple_firewall_route_tables ? count.index : 0)
   destination_cidr_block = "0.0.0.0/0"
