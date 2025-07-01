@@ -953,13 +953,24 @@ locals {
 
   // When using Network Firewall, the firewall subnets need to be associated with the public route tables to allow egress to the internet.
   // Thus the *public* subnets need to be associated with the *to_firewall* route tables. This is confusing. We apologize for the inconvenience.
-  subnets_for_public_route_tables      = local.create_firewall_subnets ? aws_subnet.firewall : aws_subnet.public
-  subnets_for_to_firewall_route_tables = local.create_firewall_subnets ? aws_subnet.public : []
+  subnets_for_public_route_tables      = var.network_firewall_enable_subnet_routing ? aws_subnet.firewall : aws_subnet.public
+  subnets_for_to_firewall_route_tables = var.network_firewall_enable_subnet_routing ? aws_subnet.public : []
 
-  firewall_vpces_by_az = { for az in var.azs : az => one([for sync_state in var.network_firewall_sync_states :
-  sync_state.attachment[0].endpoint_id if sync_state.availability_zone == az]) }
+  firewall_vpces_by_az = {
+    for az in var.azs :
+    az => one([
+      for sync_state in var.network_firewall_sync_states :
+      sync_state.attachment[0].endpoint_id if sync_state.availability_zone == az
+    ])
+  }
 
-  firewall_ingress_routes = { for cidr, az in { for subnet in concat(aws_subnet.public, aws_subnet.private) : subnet.cidr_block => subnet.availability_zone } : cidr => local.firewall_vpces_by_az[az] if local.create_firewall_subnets }
+  firewall_ingress_routes = {
+    for cidr, az in {
+      for subnet in concat(aws_subnet.public, aws_subnet.private) :
+      subnet.cidr_block => subnet.availability_zone
+    } :
+    cidr => local.firewall_vpces_by_az[az] if var.network_firewall_enable_ingress_routing
+  }
 
 }
 
@@ -1029,13 +1040,13 @@ resource "aws_route" "to_firewall" {
 
 //route table for the ingress to associate with the IGW.
 resource "aws_route_table" "ingress_firewall" {
-  count = local.create_firewall_subnets ? 1 : 0
+  count = var.network_firewall_enable_ingress_routing ? 1 : 0
 
   vpc_id = local.vpc_id
 
   tags = merge(
     {
-      "Name" =  "${var.name}-ingress-${var.firewall_subnet_suffix}"
+      "Name" = "${var.name}-ingress-${var.firewall_subnet_suffix}"
     },
     var.tags,
     var.firewall_route_table_tags,
@@ -1043,7 +1054,7 @@ resource "aws_route_table" "ingress_firewall" {
 }
 //IGW route table association
 resource "aws_route_table_association" "ingress_firewall" {
-  count = local.create_firewall_subnets ? local.len_firewall_subnets : 0
+  count = var.network_firewall_enable_ingress_routing ? local.len_firewall_subnets : 0
 
   gateway_id     = aws_internet_gateway.this[0].id
   route_table_id = aws_route_table.ingress_firewall[0].id
@@ -1051,10 +1062,10 @@ resource "aws_route_table_association" "ingress_firewall" {
 
 //One ingress route per public subnet
 resource "aws_route" "ingress_firewall" {
-  for_each = local.firewall_ingress_routes
-  route_table_id = aws_route_table.ingress_firewall[0].id
+  for_each               = local.firewall_ingress_routes
+  route_table_id         = aws_route_table.ingress_firewall[0].id
   destination_cidr_block = each.key
-  vpc_endpoint_id = each.value
+  vpc_endpoint_id        = each.value
 }
 
 ################################################################################

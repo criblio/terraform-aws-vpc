@@ -38,18 +38,6 @@ variable "azs" {
   default     = []
 }
 
-variable "network_firewall_sync_states" {
-  description = "A list of Network Firewall VPCEs to associate with the VPC"
-  type        = list(object({
-    attachment = list(object({
-      subnet_id = string
-      endpoint_id = string
-    }))
-    availability_zone = string
-  }))
-  default     = []
-}
-
 variable "enable_dns_hostnames" {
   description = "Should be true to enable DNS hostnames in the VPC"
   type        = bool
@@ -138,6 +126,34 @@ variable "vpc_block_public_access_exclusions" {
   description = "A map of VPC block public access exclusions"
   type        = map(any)
   default     = {}
+}
+
+################################################################################
+# AWS Network Firewall
+################################################################################
+
+variable "network_firewall_sync_states" {
+  description = "A list of Network Firewall VPCEs to associate with the VPC"
+  type = list(object({
+    attachment = list(object({
+      subnet_id   = string
+      endpoint_id = string
+    }))
+    availability_zone = string
+  }))
+  default = []
+}
+
+variable "network_firewall_enable_subnet_routing" {
+  description = "Route outbound traffic through the Network Firewall (requires network_firewall_sync_states to be set)"
+  type        = bool
+  default     = false
+}
+
+variable "network_firewall_enable_ingress_routing" {
+  description = "Route inbound traffic through the Network Firewall (requires network_firewall_sync_states to be set)"
+  type        = bool
+  default     = false
 }
 
 ################################################################################
