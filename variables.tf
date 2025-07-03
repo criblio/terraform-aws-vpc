@@ -129,6 +129,34 @@ variable "vpc_block_public_access_exclusions" {
 }
 
 ################################################################################
+# AWS Network Firewall
+################################################################################
+
+variable "network_firewall_sync_states" {
+  description = "A list of Network Firewall VPCEs to associate with the VPC"
+  type = list(object({
+    attachment = list(object({
+      subnet_id   = string
+      endpoint_id = string
+    }))
+    availability_zone = string
+  }))
+  default = []
+}
+
+variable "network_firewall_enable_subnet_routing" {
+  description = "Route outbound traffic through the Network Firewall (requires network_firewall_sync_states to be set)"
+  type        = bool
+  default     = false
+}
+
+variable "network_firewall_enable_ingress_routing" {
+  description = "Route inbound traffic through the Network Firewall (requires network_firewall_sync_states to be set)"
+  type        = bool
+  default     = false
+}
+
+################################################################################
 # DHCP Options Set
 ################################################################################
 
@@ -1034,6 +1062,134 @@ variable "intra_outbound_acl_rules" {
 
 variable "intra_acl_tags" {
   description = "Additional tags for the intra subnets network ACL"
+  type        = map(string)
+  default     = {}
+}
+
+################################################################################
+# Firewall Subnets
+################################################################################
+
+variable "firewall_subnets" {
+  description = "A list of firewall subnets inside the VPC"
+  type        = list(string)
+  default     = []
+}
+
+variable "firewall_subnet_assign_ipv6_address_on_creation" {
+  description = "Specify true to indicate that network interfaces created in the specified subnet should be assigned an IPv6 address. Default is `false`"
+  type        = bool
+  default     = false
+}
+
+variable "firewall_subnet_enable_dns64" {
+  description = "Indicates whether DNS queries made to the Amazon-provided DNS Resolver in this subnet should return synthetic IPv6 addresses for IPv4-only destinations. Default: `true`"
+  type        = bool
+  default     = true
+}
+
+variable "firewall_subnet_enable_resource_name_dns_aaaa_record_on_launch" {
+  description = "Indicates whether to respond to DNS queries for instance hostnames with DNS AAAA records. Default: `true`"
+  type        = bool
+  default     = true
+}
+
+variable "firewall_subnet_enable_resource_name_dns_a_record_on_launch" {
+  description = "Indicates whether to respond to DNS queries for instance hostnames with DNS A records. Default: `false`"
+  type        = bool
+  default     = false
+}
+
+variable "create_multiple_firewall_route_tables" {
+  description = "Indicates whether to create a separate route table for each firewall subnet. Default: `false`"
+  type        = bool
+  default     = true
+}
+
+variable "firewall_subnet_ipv6_prefixes" {
+  description = "Assigns IPv6 firewall subnet id based on the Amazon provided /56 prefix base 10 integer (0-256). Must be of equal length to the corresponding IPv4 subnet list"
+  type        = list(string)
+  default     = []
+}
+
+variable "firewall_subnet_ipv6_native" {
+  description = "Indicates whether to create an IPv6-only subnet. Default: `false`"
+  type        = bool
+  default     = false
+}
+
+variable "firewall_subnet_private_dns_hostname_type_on_launch" {
+  description = "The type of hostnames to assign to instances in the subnet at launch. For IPv6-only subnets, an instance DNS name must be based on the instance ID. For dual-stack and IPv4-only subnets, you can specify whether DNS names use the instance IPv4 address or the instance ID. Valid values: `ip-name`, `resource-name`"
+  type        = string
+  default     = null
+}
+
+variable "firewall_subnet_names" {
+  description = "Explicit values to use in the Name tag on firewall subnets. If empty, Name tags are generated"
+  type        = list(string)
+  default     = []
+}
+
+variable "firewall_subnet_suffix" {
+  description = "Suffix to append to firewall subnets name"
+  type        = string
+  default     = "firewall"
+}
+
+variable "firewall_subnet_tags" {
+  description = "Additional tags for the firewall subnets"
+  type        = map(string)
+  default     = {}
+}
+
+variable "firewall_route_table_tags" {
+  description = "Additional tags for the firewall route tables"
+  type        = map(string)
+  default     = {}
+}
+
+################################################################################
+# Firewall Network ACLs
+################################################################################
+
+variable "firewall_dedicated_network_acl" {
+  description = "Whether to use dedicated network ACL (not default) and custom rules for firewall subnets"
+  type        = bool
+  default     = false
+}
+
+variable "firewall_inbound_acl_rules" {
+  description = "Firewall subnets inbound network ACLs"
+  type        = list(map(string))
+  default = [
+    {
+      rule_number = 100
+      rule_action = "allow"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_block  = "0.0.0.0/0"
+    },
+  ]
+}
+
+variable "firewall_outbound_acl_rules" {
+  description = "Firewall subnets outbound network ACLs"
+  type        = list(map(string))
+  default = [
+    {
+      rule_number = 100
+      rule_action = "allow"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_block  = "0.0.0.0/0"
+    },
+  ]
+}
+
+variable "firewall_acl_tags" {
+  description = "Additional tags for the firewall subnets network ACL"
   type        = map(string)
   default     = {}
 }

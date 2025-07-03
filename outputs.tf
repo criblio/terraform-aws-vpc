@@ -506,6 +506,55 @@ output "intra_network_acl_arn" {
 }
 
 ################################################################################
+# Firewall Subnets
+################################################################################
+
+output "firewall_subnet_objects" {
+  description = "A list of all firewall subnets, containing the full objects."
+  value       = aws_subnet.firewall
+}
+
+output "firewall_subnets" {
+  description = "List of IDs of firewall subnets"
+  value       = aws_subnet.firewall[*].id
+}
+
+output "firewall_subnet_arns" {
+  description = "List of ARNs of firewall subnets"
+  value       = aws_subnet.firewall[*].arn
+}
+
+output "firewall_subnets_cidr_blocks" {
+  description = "List of cidr_blocks of firewall subnets"
+  value       = compact(aws_subnet.firewall[*].cidr_block)
+}
+
+output "firewall_subnets_ipv6_cidr_blocks" {
+  description = "List of IPv6 cidr_blocks of firewall subnets in an IPv6 enabled VPC"
+  value       = compact(aws_subnet.firewall[*].ipv6_cidr_block)
+}
+
+output "firewall_route_table_ids" {
+  description = "List of IDs of firewall route tables"
+  value       = aws_route_table.to_firewall[*].id
+}
+
+output "firewall_route_table_association_ids" {
+  description = "List of IDs of the firewall route table association"
+  value       = aws_route_table_association.to_firewall[*].id
+}
+
+output "firewall_network_acl_id" {
+  description = "ID of the firewall network ACL"
+  value       = try(aws_network_acl.firewall[0].id, null)
+}
+
+output "firewall_network_acl_arn" {
+  description = "ARN of the firewall network ACL"
+  value       = try(aws_network_acl.firewall[0].arn, null)
+}
+
+################################################################################
 # NAT Gateway
 ################################################################################
 
